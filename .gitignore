@@ -1,0 +1,18 @@
+node_modules
+node_modules/
+dist/
+.wrangler/
+.venv
+.venv/
+.tts-cache/
+*.log
+.DS_Store
+__pycache__/
+*.pyc
+
+.env
+.env.*
+
+# local image enrichment
+.unsplash-checkpoint.json
+.unsplash-cache.json

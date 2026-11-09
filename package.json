@@ -1,0 +1,20 @@
+{
+  "name": "p6english",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "p6english \u2014 Primary 6 Spelling spelling game for Cloudflare Workers",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "npm run build && wrangler deploy",
+    "words": "python3 scripts/build_words.py",
+    "images": "python3 scripts/enrich_images.py",
+    "tts": "python3 scripts/generate_static_tts.py"
+  },
+  "devDependencies": {
+    "vite": "^6.0.0",
+    "wrangler": "^4.0.0"
+  }
+}

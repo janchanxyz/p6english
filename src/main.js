@@ -55,6 +55,7 @@ const state = {
   shareCard: null,
   view: 'home', // home | play | end | review | shareView | gameover
   reportBlocked: false,
+  slotPicked: false,
 };
 
 function toast(msg) {
@@ -346,13 +347,16 @@ function initDraft(puzzle) {
   state.draft = (puzzle?.blanks || []).map(() => '');
   state.activeBlank = 0;
   state.revealed = false;
+  state.slotPicked = false;
 }
 
 function assembledAnswer(puzzle) {
   if (!puzzle) return '';
   const chars = puzzle.word.split('');
   puzzle.blanks.forEach((bi, di) => {
-    chars[bi] = (state.draft[di] || '').toLowerCase();
+    const typed = (state.draft[di] || '').toLowerCase();
+    const expected = chars[bi] || '';
+    chars[bi] = /[A-Z]/.test(expected) ? typed.toUpperCase() : typed;
   });
   return chars.join('');
 }
@@ -859,6 +863,7 @@ function bindSlotClicks() {
       const di = Number(el.dataset.di);
       if (Number.isNaN(di) || state.revealed) return;
       state.activeBlank = di;
+      state.slotPicked = true;
       updateSlotsDom();
     });
   });
@@ -870,6 +875,7 @@ function onKey(key) {
   if (key === 'clear') {
     state.draft = puzzle.blanks.map(() => '');
     state.activeBlank = 0;
+    state.slotPicked = false;
     updateSlotsDom();
     return;
   }
@@ -880,12 +886,24 @@ function onKey(key) {
       state.activeBlank -= 1;
       state.draft[state.activeBlank] = '';
     }
+    state.slotPicked = false;
     updateSlotsDom();
     return;
   }
   if (/^[a-z]$/.test(key)) {
+    const complete = state.draft.length === puzzle.blanks.length && !state.draft.some((x) => !x);
+    // Ignore an extra key once every box is filled, unless the typist just
+    // tapped a slot to replace that letter. This stops a correct answer being
+    // overwritten after the backspace key or an accidental extra letter.
+    if (complete && !state.slotPicked) {
+      return;
+    }
     state.draft[state.activeBlank] = key;
-    if (state.activeBlank < puzzle.blanks.length - 1) state.activeBlank += 1;
+    state.slotPicked = false;
+    const after = state.draft.findIndex((x, i) => i > state.activeBlank && !x);
+    const firstEmpty = state.draft.findIndex((x) => !x);
+    if (after >= 0) state.activeBlank = after;
+    else if (firstEmpty >= 0) state.activeBlank = firstEmpty;
     updateSlotsDom();
   }
 }
@@ -899,7 +917,7 @@ function onCheck() {
   }
   cancelAutoSpeak();
   const ans = assembledAnswer(puzzle);
-  const ok = ans === puzzle.word;
+  const ok = ans.toLowerCase() === String(puzzle.word || '').toLowerCase();
   state.answers[state.index] = ans;
   state.results[state.index] = ok ? 1 : 0;
   if (!ok) {
